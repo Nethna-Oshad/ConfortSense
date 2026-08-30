@@ -1,23 +1,29 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState, useEffect } from "react";
 import PageHeader from "@/components/comfort/PageHeader";
 import ThermalCamera from "@/components/comfort/ThermalCamera";
 import { useComfortData } from "@/lib/comfort-data";
-import { canViewThermal } from "@/lib/thermal-access";
+import { MapPin } from "lucide-react";
 
 export default function StudentThermalPage() {
   const { zones, ready } = useComfortData();
-  const studyZones = useMemo(
-    () => zones.filter((zone) => canViewThermal("student", zone.type)),
-    [zones]
-  );
-  const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  const zone =
-    studyZones.find((item) => item.id === (selectedId ?? studyZones[0]?.id)) ?? studyZones[0];
+  const [selectedId, setSelectedId] = useState<string>("lecture-hall-4b");
+
+  // #NNN: Home page eke select karapu eka gannawa, nathnam default "Lecture Hall 4B" walata lock karanawa
+  useEffect(() => {
+    const savedZone = localStorage.getItem("studentCurrentZone");
+    if (savedZone && savedZone !== "none") {
+      setSelectedId(savedZone);
+    } else {
+      setSelectedId("lecture-hall-4b");
+    }
+  }, []);
+
+  const zone = zones.find((item) => item.id === selectedId) || zones.find((item) => item.id === "lecture-hall-4b");
 
   return (
-    <div className="space-y-6 lg:space-y-8">
+    <div className="space-y-6 lg:space-y-8 pb-24">
       <PageHeader
         eyebrow="Student spaces"
         title="Student presence & noise heatmap"
@@ -32,20 +38,17 @@ export default function StudentThermalPage() {
         <p className="text-sm text-[#7F93B3]">No study-area thermal feeds are online.</p>
       ) : (
         <>
-          <div className="flex flex-wrap gap-2">
-            {studyZones.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedId(item.id)}
-                className={`rounded-full px-4 py-2 text-xs font-bold uppercase tracking-widest transition ${
-                  zone.id === item.id
-                    ? "bg-gradient-to-r from-[#2B7FE0] to-[#4FB8E8] text-white"
-                    : "border border-[#294467]/70 text-[#7F93B3] hover:text-white"
-                }`}
-              >
-                {item.name}
-              </button>
-            ))}
+          {/* #NNN: Wena zones select karanna thibba Dropdown eka ain kala. Dan penne current zone eka witharai */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-[#294467]/60 bg-[#0E1C30] p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-[#4FB8E8]/10 text-[#4FB8E8]">
+                <MapPin className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-[#7F93B3]">Viewing Thermal Map For</p>
+                <p className="text-lg font-bold text-white">{zone.name}</p>
+              </div>
+            </div>
           </div>
 
           <ThermalCamera

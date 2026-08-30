@@ -46,6 +46,8 @@ export default function LecturerRoomsPage() {
       <PageHeader
         eyebrow="Hall Selection"
         title="Select Your Lecture Hall"
+        backHref="/login"
+        backLabel="Back to Dashboard"
       />
 
       {/* #NNN: Recently Accessed Section */}

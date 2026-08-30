@@ -2,18 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useComfortData } from "@/lib/comfort-data";
-import { BellRing, X, ArrowRight } from "lucide-react";
+import { BellRing, X, ArrowRight, TrendingUp } from "lucide-react";
 import type { UserRole } from "@/lib/types";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 export default function GlobalToast({ role }: { role: UserRole }) {
   const { studentHome, lecturerDashboard, adminOverview } = useComfortData();
   const pathname = usePathname();
+  const router = useRouter(); 
   
   const [toastAlert, setToastAlert] = useState<any | null>(null);
   const [isToastExpanded, setIsToastExpanded] = useState(false);
 
-  const COOLDOWN_MS = 10 * 1000; 
+  const COOLDOWN_MS = 5 * 1000; 
 
   useEffect(() => {
     if (role === "lecturer" && !pathname.includes("/dashboard")) {
@@ -29,12 +30,12 @@ export default function GlobalToast({ role }: { role: UserRole }) {
     const activeAlert = alerts.find((a: any) => a.severity === "critical" || a.severity === "warning");
     
     if (activeAlert) {
-      const signature = activeAlert.id + activeAlert.message;
+      const signature = activeAlert.id + activeAlert.title;
       const seenToastIds = new Set(JSON.parse(localStorage.getItem('seenToastIds') || '[]'));
       const lastToastTime = parseInt(localStorage.getItem('lastToastTime') || '0');
       const now = Date.now();
 
-      if (!seenToastIds.has(signature) && (now - lastToastTime > COOLDOWN_MS)) {
+      if (!seenToastIds.has(signature) || (now - lastToastTime > COOLDOWN_MS)) {
         setToastAlert(activeAlert);
         setIsToastExpanded(false);
         
@@ -42,9 +43,6 @@ export default function GlobalToast({ role }: { role: UserRole }) {
         localStorage.setItem('seenToastIds', JSON.stringify(Array.from(seenToastIds)));
         localStorage.setItem('lastToastTime', now.toString());
       }
-    } else {
-      // #NNN: Thathwaye abyantharika nathi unama (normal unama) toast eka auto close wenawa
-      setToastAlert(null);
     }
   }, [role, studentHome, lecturerDashboard, adminOverview, pathname]);
 
@@ -103,6 +101,20 @@ export default function GlobalToast({ role }: { role: UserRole }) {
                   <p className={`text-sm font-semibold ${textClass}`}>{toastAlert.recommendation}</p>
                 </div>
               </div>
+            )}
+
+            {/* #NNN: Toast eken kelinma Admin Overview ekata yanna button eka */}
+            {(role === "admin" || role === "lecturer") && toastAlert.title.toLowerCase().includes("co2") && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setToastAlert(null);
+                  router.push(`/admin/overview?zoneId=${toastAlert.zoneId}`);
+                }}
+                className={`mt-3 w-full flex items-center justify-center gap-2 rounded-lg bg-[#0B1220]/60 hover:bg-[#0B1220] border ${expandedBorder} py-2.5 text-xs font-bold ${textClass} transition`}
+              >
+                <TrendingUp className="h-4 w-4" /> View Predictive Trend
+              </button>
             )}
           </div>
         )}

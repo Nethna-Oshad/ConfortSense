@@ -54,7 +54,6 @@ function NavLink({
   );
 }
 
-// #NNN: Nav bar eke Badge eka Alert page eke baluwama ain wena logic eka
 function useAlertCount(role: UserRole) {
   const { lecturerDashboard, studentHome, adminOverview } = useComfortData();
   const pathname = usePathname();
@@ -63,13 +62,23 @@ function useAlertCount(role: UserRole) {
 
   useEffect(() => {
     let currentAlerts: any[] = [];
-    if (role === "lecturer") currentAlerts = lecturerDashboard?.alerts ?? [];
-    if (role === "student") currentAlerts = studentHome?.studentAlerts ?? [];
-    if (role === "admin") currentAlerts = adminOverview?.alerts ?? [];
+    
+    if (role === "lecturer") {
+      currentAlerts = lecturerDashboard?.alerts ?? [];
+    } else if (role === "student") {
+      // #NNN: Student ta mulu campus ekema alerts pennanne nathuwa nearestZone eke ewa witharak count gannawa
+      const currentZoneId = studentHome?.nearestZone?.id;
+      currentAlerts = (studentHome?.studentAlerts ?? []).filter(
+        (a: any) => a.zoneId === currentZoneId
+      );
+    } else if (role === "admin") {
+      currentAlerts = adminOverview?.alerts ?? [];
+    }
+    
     setAlerts(currentAlerts);
 
     if (pathname.includes("alerts") || pathname.includes("overview")) {
-       const currentIds = currentAlerts.map(a => a.id + a.message);
+       const currentIds = currentAlerts.map(a => `${a.zoneId}-${a.title}`.toLowerCase());
        const newRead = Array.from(new Set([...readAlerts, ...currentIds]));
        setReadAlerts(newRead);
        localStorage.setItem("readAlerts", JSON.stringify(newRead));
@@ -79,7 +88,8 @@ function useAlertCount(role: UserRole) {
     }
   }, [role, lecturerDashboard, studentHome, adminOverview, pathname]);
 
-  return alerts.filter(a => !readAlerts.includes(a.id + a.message)).length;
+  // Read karapu nathi, thama active thiyena alerts gana
+  return alerts.filter(a => !readAlerts.includes(`${a.zoneId}-${a.title}`.toLowerCase())).length;
 }
 
 export function AppSidebar({ role }: { role: UserRole }) {
